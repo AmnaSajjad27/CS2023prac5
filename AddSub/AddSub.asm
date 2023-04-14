@@ -4,20 +4,20 @@
 // Put your code here.
 
 // initalise R1 and store it in D
-@R1
-D = M
+    @R1
+    D = M
 // initalise R2
-@R2
+    @R2
 // R1 + R2
-D = D + M
+    D = D + M
 // initalise R3
-@R3
+    @R3
 // ...- R3
-D = D - M
+    D = D - M
 // store it in R0
-@R0
-M = D
+    @R0
+    M = D
 // end the program 
-(END)
-@END
-0;JMP
+// (END)
+    @END
+    0;JMP
