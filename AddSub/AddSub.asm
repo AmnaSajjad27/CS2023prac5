@@ -18,6 +18,6 @@
     @R0
     M = D
 // end the program 
-// (END)
+(END)
     @END
     0;JMP
