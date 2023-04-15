@@ -46,5 +46,4 @@ M = D
 D;JGT
 
 (END)
-@R0
 0;JMP
