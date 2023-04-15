@@ -12,38 +12,48 @@
 @R0
 M = 0
 
-// jump if (R2 > 0)
+@R1
+D = M
+
+@END
+D;JEQ
+
 @R2
 D = M
-@STEP
-D;JGT
-
-// else go to end
 @END
+D;JEQ
+
+// jump to neg loop 
+@NEG
 0;JMP
 
-// Succesively add R1 to R2 to *multiply*
-// if R2 > 0, we step again 
-(STEP)
-@R0
+(LOOP)
+@R1
 D = M
 
-// adding here 
-@R1
-D = D + M
-
-// writting the result back to R0
 @R0
-M = D
-
-// now we reduce our counter i.e. R2 by 1
+// Succesively add to multiply 
+M = M + D
 @R2
-D = M - 1
-M = D 
 
-// if R2 > 0 still, loop again
-@STEP
+MD = M - 1
+@LOOP
 D;JGT
 
 (END)
+@END
+0;JMP
+
+// NEG loop
+// Succesively adding negative numbers 
+(NEG)
+@R2
+D = M
+@LOOP
+D;JGE
+@R1
+M = -M
+@R2
+M = - MD
+@LOOP
 0;JMP
