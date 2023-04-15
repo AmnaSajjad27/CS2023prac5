@@ -9,12 +9,13 @@ output-list RAM[0]%D2.6.2 RAM[1]%D2.6.2 RAM[2]%D2.6.2 RAM[20]%D2.6.2 RAM[21]%D2.
 
 // testing multiple negative values 
 // testing if R0 is initalised to 0
+// testing duplicates 
 
 set PC 0,
 set RAM[0]  1,  // Set R0
 set RAM[1]  20, // Set R1
 set RAM[2]  4,  // Set R2
-set RAM[20] -20,  // Set Arr[0]
+set RAM[20] -4,  // Set Arr[0]
 set RAM[21] -10000,  // Set Arr[1]
 set RAM[22] -4,  // Set Arr[2]
 set RAM[23] 300;  // Set Arr[3]
