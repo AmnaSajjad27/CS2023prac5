@@ -1,12 +1,17 @@
 #include "Assembler.h"
 #include "SymbolTable.h"
 
-#include <fstream>
-#include <iostream>
-#include <regex>
-#include <sstream>
 #include <string>
-#include <vector>
+#include <bitset>
+#include <ctype.h>
+#include <iostream>
+
+
+/*
+Possible Sources of error
+    Mistake
+    permutation of destination AMD ADM
+*/
 
 using namespace std;
 
@@ -14,13 +19,14 @@ using namespace std;
  * Assembler constructor
  */
 Assembler::Assembler() {
-   int startAddress = 16;
+    // Your code here
 }
 
 /**
  * Assembler destructor
  */
 Assembler::~Assembler() {
+    // Your code here
 }
 
 /**
@@ -29,47 +35,31 @@ Assembler::~Assembler() {
  * @param symbolTable The symbol table to populate.
  */
 void Assembler::buildSymbolTable(SymbolTable* symbolTable, string instructions[], int numOfInst) {
-    int line_number;
-    int index;
-
-    index = 0;
-    line_number = 0;
-
-    while (index < numOfInst)
-    {
-        if (parseInstructionType(instructions[index]) != L_INSTRUCTION)
-        {
-            line_number++;
+    InstructionType type;
+    string symbol = "";
+    int position = 0;
+    for (int i = 0; i < numOfInst; i++){
+        type = parseInstructionType(instructions[i]);
+        symbol = parseSymbol(instructions[i]);
+        if(type == L_INSTRUCTION){
+            symbolTable->addSymbol(symbol,position); 
+            position= position - 1;
         }
-        if (parseInstructionType(instructions[index]) == L_INSTRUCTION)
-        {
-            string parseSym;
-
-            parseSym = parseSymbol(instructions[index]);
-
-            if(!symbolTable->inTable(parseSym))
-            {
-                symbolTable->addSymbol(parseSym, line_number);
+        position++;
+    }
+    for (int i = 0; i < numOfInst; i++){
+        type = parseInstructionType(instructions[i]);
+        symbol = parseSymbol(instructions[i]);
+        if(type == A_INSTRUCTION){
+            if(symbol[0]=='R' && isdigit(symbol[1])){
+                string symbol2 = symbol.substr(1);
+                int value = stoi(symbol2);
+                symbolTable->addSymbol(symbol, value);
+            }else if(!isdigit(symbol[1]) & symbolTable->getSymbol(symbol)==-1){
+                symbolTable->addSymbol(symbol,symbolTable->getVarNum());
             }
         }
-        index++;
     }
-}
-
-// converts a string vector into a string of multiple lines 
-string vtos(vector<string> vec)
-{
-    string  resString;
-    int     len;
-    len = vec.size();
-    resString = "";
-    for (int i = 0; i < len; i++){
-        resString.append(vec.at(i));
-        if (i != (len-1)){
-            resString.append("\n");
-        }
-    }
-    return resString;
 }
 
 /**
@@ -79,37 +69,27 @@ string vtos(vector<string> vec)
  * @return A string containing the generated machine code as lines of 16-bit binary instructions.
  */
 string Assembler::generateMachineCode(SymbolTable* symbolTable, string instructions[], int numOfInst) {
-    vector<string> resString;
-    int i = 0;
-    while (i < numOfInst)
-    {
-        if(parseInstructionType(instructions[i]) == A_INSTRUCTION)
-        {
-            string resSymbol;
-            resSymbol = "0";
-            resSymbol.append(translateSymbol(instructions[i]), symbolTable);
-            resSymbol.insert(resString.end(), resSymbol);
+    string result = "";
+    InstructionType type;
+    for (int i = 0; i < numOfInst; i++){
+        string temp = "";
+        type = parseInstructionType(instructions[i]);
+        if(type == C_INSTRUCTION){
+            temp = temp + "111";
+            temp = temp + translateComp(parseInstructionComp(instructions[i]));
+            temp = temp + translateDest(parseInstructionDest(instructions[i]));
+            temp = temp + translateJump(parseInstructionJump(instructions[i]));
+            temp = temp + "\n";
+        }else if(type == A_INSTRUCTION){
+            string symbol = parseSymbol(instructions[i]);
+            temp = temp + translateSymbol(symbol, symbolTable);
+            temp = temp + "\n";
         }
-        else if(parseInstructionType(instructions[i]) == C_INSTRUCTION)
-        {
-            InstructionComp inComp;
-            InstructionDest inDest;
-            InstructionJump inJump;
-            inComp = parseInstructionComp(instructions[i]);
-            inDest = parseInstructionDest(instructions[i]);
-            inJump = parseInstructionJump(instructions[i]);
-            string resComp;
-            resComp = "111";
-            resComp.append(translateComp(inComp));       
-            resComp.append(translateDest(inDest));
-            resComp.append(translateJump(inJump));
-            resString.insert(resString.end(), resComp);
-        }
-        i++;
+        // if(temp.size()==17){
+            result+= temp;
+        // }
     }
-    string rtnString;
-    rtnString = vtos(resString);
-    return rtnString;
+    return result;
 }
 
 /**
@@ -118,27 +98,14 @@ string Assembler::generateMachineCode(SymbolTable* symbolTable, string instructi
  * @return The type of the instruction (A_INSTRUCTION, C_INSTRUCTION, L_INSTRUCTION, NULL)
  */
 Assembler::InstructionType Assembler::parseInstructionType(string instruction) {
-
-    if (instruction.find("@") != string::npos) {
-        return A_INSTRUCTION;
-    } else if (instruction.find("(") != string::npos) {
+    if(instruction.find('(')!=string::npos && instruction.find(')')!=string::npos){
         return L_INSTRUCTION;
-    } else if (instruction.find("D") != string::npos) {
+    }else if(instruction.find('@')!=string::npos){
+        return A_INSTRUCTION;
+    }else if(instruction.find('=')!=string::npos || instruction.find(';')!=string::npos){
         return C_INSTRUCTION;
-    } else if (instruction.find("A") != string::npos) {
-        return C_INSTRUCTION;
-    } else if (instruction.find("M") != string::npos) {
-        return C_INSTRUCTION;
-    } else if (instruction.find("0") != string::npos) {
-        return C_INSTRUCTION;
-    } else if (instruction.find("1") != string::npos) {
-        return C_INSTRUCTION;
-    } else if (instruction.find("-") != string::npos) {
-        return C_INSTRUCTION; 
-    } else if (instruction.find("!") != string::npos) {
-        return C_INSTRUCTION; 
-    }                   
-    return NULL_INSTRUCTION;
+    }
+    return C_INSTRUCTION;
 }
 
 /**
@@ -147,29 +114,20 @@ Assembler::InstructionType Assembler::parseInstructionType(string instruction) {
  * @return The destination of the instruction (A, D, M, AM, AD, MD, AMD, NULL)
  */
 Assembler::InstructionDest Assembler::parseInstructionDest(string instruction) {
-    
-    unsigned long   equalSignPos;
-    string  destString;
-    equalSignPos = instruction.find("=");
-    if (equalSignPos == string::npos)
-        return NULL_DEST;
-
-    destString = instruction.substr(0,equalSignPos);
-
-    if (destString == "A"){
-        return A;
-    } else if (destString == "D"){
-        return D;
-    } else if (destString == "M"){
-        return M;
-    } else if (destString == "AM"){
-        return AM;
-    } else if (destString == "AD"){
-        return AD;
-    } else if (destString == "MD"){
-        return MD;
-    } else if (destString == "AMD"){
+    if (instruction.find("AMD=") != string::npos){
         return AMD;
+    }else if (instruction.find("MD=") != string::npos) {
+        return MD;
+    }else if (instruction.find("AD=") != string::npos) {
+        return AD;
+    }else if (instruction.find("AM=") != string::npos) {
+        return AM;
+    }else if (instruction.find("M=") != string::npos) {
+        return M;
+    }else if (instruction.find("D=") != string::npos) {
+        return D;
+    }else if (instruction.find("A=") != string::npos) {
+        return A;
     }
     return NULL_DEST;
 }
@@ -182,26 +140,20 @@ Assembler::InstructionDest Assembler::parseInstructionDest(string instruction) {
 Assembler::InstructionJump Assembler::parseInstructionJump(string instruction) {
     // Your code here:
     // for example if "JLT" appear at the comp field return enum label JLT
-    if (instruction.find("JLT") != string::npos) {
-        return JLT;
-    }
-    else if (instruction.find("JGT") != string::npos){
-        return JGT;
-    }
-    else if (instruction.find("JEQ") != string::npos){
-        return JEQ;
-    }
-    else if (instruction.find("JLE") != string::npos){
-        return JLE;
-    }
-    else if (instruction.find("JGE") != string::npos){
-        return JGE;
-    }
-    else if (instruction.find("JNE") != string::npos){
-        return JNE;
-    }
-    else if (instruction.find("JMP") != string::npos){
+    if (instruction.find("JMP") != string::npos) {
         return JMP;
+    }else if (instruction.find("JNE") != string::npos) {
+        return JNE;
+    }else if (instruction.find("JGE") != string::npos) {
+        return JGE;
+    }else if (instruction.find("JLE") != string::npos) {
+        return JLE;
+    }else if (instruction.find("JEQ") != string::npos) {
+        return JEQ;
+    }else if (instruction.find("JGT") != string::npos) {
+        return JGT;
+    }else if (instruction.find("JLT") != string::npos) {
+        return JLT;
     }
     return NULL_JUMP;
 }
@@ -216,7 +168,7 @@ Assembler::InstructionComp Assembler::parseInstructionComp(string instruction) {
     // for example if "0" appear at the comp field return CONST_0
     if (instruction.find("0") != string::npos) {
         return CONST_0;
-    } else if (instruction.find("A+1") != string::npos) {
+    }else if (instruction.find("A+1") != string::npos) {
         return A_ADD_1;
     }else if (instruction.find("M+1") != string::npos) {
         return M_ADD_1;
@@ -316,7 +268,6 @@ string Assembler::parseSymbol(string instruction) {
  * @return A string containing the 3 binary dest bits that correspond to the given dest value.
  */
 string Assembler::translateDest(InstructionDest dest) {
-    
     string result = "000";
     if(dest==A){
         result = "100";
@@ -342,7 +293,6 @@ string Assembler::translateDest(InstructionDest dest) {
  * @return A string containing the 3 binary jump bits that correspond to the given jump value.
  */
 string Assembler::translateJump(InstructionJump jump) {
-    
     string result = "000";
     if(jump==JGT){
         result = "001";
@@ -368,7 +318,6 @@ string Assembler::translateJump(InstructionJump jump) {
  * @return A string containing the 7 binary computation/op-code bits that correspond to the given comp value.
  */
 string Assembler::translateComp(InstructionComp comp) {
-    
     string result = "";
     if(comp==CONST_0){
         result = "0101010";
@@ -430,7 +379,6 @@ string Assembler::translateComp(InstructionComp comp) {
         result = "1010101";
     }
     return result;
-
 }
 
 /**
@@ -440,7 +388,6 @@ string Assembler::translateComp(InstructionComp comp) {
  * @return A string containing the 15 binary bits that correspond to the given sybmol.
  */
 string Assembler::translateSymbol(string symbol, SymbolTable* symbolTable) {
-    
     int num = 0 ;
 
     if(symbolTable->getSymbol(symbol)!=-1){

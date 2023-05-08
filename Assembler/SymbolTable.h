@@ -8,15 +8,17 @@
 using namespace std;
 
 class SymbolTable {
-   public:
-    SymbolTable();
-    ~SymbolTable();
-
-    void addSymbol(string symbol, uint16_t value);
-    int getSymbol(string symbol);
-    bool inTable(string symbol);
-
     private:
-    map<string, uint16_t> symbolAddress;};
+        map<string,int> symbols;
+        int varNum = 16;
+    public:
+        SymbolTable();
+        ~SymbolTable();
+
+        void addSymbol(string symbol, uint16_t value);
+        int getSymbol(string symbol);
+        int getVarNum();
+        void print();
+};
 
 #endif /* SYMBOL_TABLE_H */
