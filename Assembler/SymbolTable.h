@@ -14,6 +14,9 @@ class SymbolTable {
 
     void addSymbol(string symbol, uint16_t value);
     int getSymbol(string symbol);
-};
+    bool inTable(string symbol);
+
+    private:
+    map<string, uint16_t> symbolAddress;};
 
 #endif /* SYMBOL_TABLE_H */
